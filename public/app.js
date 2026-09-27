@@ -81,7 +81,20 @@ function resultView(){
 }
 function sceneHtml(s,i){
   const m=state.sceneMedia[i]||{};
-  return `<article class="scene"><div class="scene-head"><strong>🎬 ฉาก ${i+1}: ${esc(s.scene_title||'')}</strong><span class="pill">${esc(s.duration||'')}</span></div><div class="scene-body"><div class="grid2"><div class="box"><b>ภาพ / เหตุการณ์</b><p>${esc(s.visual||'')}</p></div><div class="box"><b>มุมกล้อง</b><p>${esc(s.camera||'')}</p></div><div class="box"><b>บทพูด / บทพากย์</b><p>${esc(s.dialogue||'')}</p></div><div class="box"><b>คำขึ้นจอ</b><p>${esc(s.on_screen_text||'')}</p></div></div><div class="promptbox"><b>Prompt ภาพ</b><textarea data-scene-field="image_prompt" data-i="${i}">${esc(s.image_prompt||'')}</textarea></div><div class="promptbox"><b>Prompt วิดีโอ</b><textarea data-scene-field="video_prompt" data-i="${i}">${esc(s.video_prompt||'')}</textarea></div><div class="scene-actions"><button class="ghost" data-copy-scene="${i}">📋 Copy</button><button class="ghost" data-image-scene="${i}">🖼️ สร้างภาพ</button><button class="ghost" data-tts-scene="${i}">🎙️ สร้างเสียงพากย์</button><button class="ghost" data-video-scene="${i}">🎞️ สร้างวิดีโอ</button></div>${m.loading?'<div class="status"><span class="spinner"></span> กำลังประมวลผลสื่อ...</div>':''}${m.image?`<div class="media-preview"><img src="${m.image}" alt="AI generated"></div>`:''}${m.audio?`<div class="media-preview"><audio controls src="${m.audio}"></audio><div><a class="ghost" href="${m.audio}" download="scene-${i+1}.mp3">ดาวน์โหลดเสียง</a></div></div>`:''}${m.videoId?`<div class="media-preview"><div class="status">Video Job: ${esc(m.videoId)} • ${esc(m.videoStatus||'queued')}</div>${m.videoStatus==='completed'?`<video controls src="/api/video/content/${encodeURIComponent(m.videoId)}"></video><div><a class="ghost" href="/api/video/content/${encodeURIComponent(m.videoId)}">ดาวน์โหลด MP4</a></div>`:`<button class="ghost" data-check-video="${i}">🔄 ตรวจสถานะวิดีโอ</button>`}</div>`:''}</div></article>`;
+  return `<article class="scene"><div class="scene-head"><strong>🎬 ฉาก ${i+1}: ${esc(s.scene_title||'')}</strong><span class="pill">${esc(s.duration||'')}</span></div><div class="scene-body"><div class="grid2"><div class="box"><b>ภาพ / เหตุการณ์</b><p>${esc(s.visual||'')}</p></div><div class="box"><b>มุมกล้อง</b><p>${esc(s.camera||'')}</p></div><div class="box"><b>บทพูด / บทพากย์</b><p>${esc(s.dialogue||'')}</p></div><div class="box"><b>คำขึ้นจอ</b><p>${esc(s.on_screen_text||'')}</p></div></div><div class="promptbox"><b>Prompt ภาพ</b><textarea data-scene-field="image_prompt" data-i="${i}">${esc(s.image_prompt||'')}</textarea></div><div class="promptbox"><b>Prompt วิดีโอ</b><textarea data-scene-field="video_prompt" data-i="${i}">${esc(s.video_prompt||'')}</textarea></div><div class="scene-actions"><button class="ghost" data-copy-scene="${i}">📋 Copy</button><button class="ghost" data-image-scene="${i}">🖼️ สร้างภาพ</button><button class="ghost" data-tts-scene="${i}">🎙️ สร้างเสียงพากย์</button><button class="ghost" data-video-scene="${i}">🎞️ สร้างวิดีโอ</button></div>${m.loading?'<div class="status"><span class="spinner"></span> กำลังประมวลผลสื่อ...</div>':''}${m.image?`<div class="media-preview"><img src="${m.image}" alt="AI generated"></div>`:''}${m.audio?`<div class="media-preview"><audio controls src="${m.audio}"></audio><div><a class="ghost" href="${m.audio}" download="scene-${i+1}.mp3">ดาวน์โหลดเสียง</a></div></div>`:''}${m.videoId?`<div class="media-preview"><div class="status">Video Job: ${esc(m.videoId)} • ${esc(m.videoStatus||'queued')}</div>${m.videoStatus==='completed' && m.videoUrl
+  ? `<div class="media-preview">
+      <video controls playsinline src="${esc(m.videoUrl)}"></video>
+      <a class="ghost"
+         href="${esc(m.videoUrl)}"
+         target="_blank"
+         rel="noopener noreferrer">
+         ⬇️ ดาวน์โหลด MP4
+      </a>
+     </div>`
+  : `<button class="ghost" data-check-video="${i}">
+       🔄 ตรวจสถานะวิดีโอ
+     </button>`
+}</div>`:''}</div></article>`;
 }
 
 function modalView(){
@@ -124,7 +137,48 @@ async function createImage(i){const s=state.result.scenes[i];state.sceneMedia[i]
 let pendingTtsScene=null;
 async function createTts(i,voiceIndex=0,instructions=null){const s=state.result.scenes[i];const v=voicePresets[voiceIndex];state.sceneMedia[i]={...(state.sceneMedia[i]||{}),loading:true};render();try{const resp=await fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:s.dialogue,voice:v[0],instructions:instructions||v[2]})});if(!resp.ok){const out=await resp.json();throw new Error(out.error||'TTS failed')}const blob=await resp.blob();const url=URL.createObjectURL(blob);state.sceneMedia[i]={...(state.sceneMedia[i]||{}),loading:false,audio:url};toast('สร้างเสียงพากย์สำเร็จ')}catch(e){state.sceneMedia[i]={...(state.sceneMedia[i]||{}),loading:false};toast(`สร้างเสียงไม่สำเร็จ: ${e.message}`)}render()}
 async function startVideo(i){const s=state.result.scenes[i];state.sceneMedia[i]={...(state.sceneMedia[i]||{}),loading:true};render();try{const seconds=String(Math.min(12,Math.max(4,Math.round(parseInt(state.form.duration)||8)/(state.form.sceneCount||1))));const allowed=[4,8,12].reduce((a,b)=>Math.abs(b-seconds)<Math.abs(a-seconds)?b:a);const resp=await fetch('/api/video/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:s.video_prompt,seconds:String(allowed),size:state.form.ratio==='16:9'?'1280x720':'720x1280'})});const out=await resp.json();if(!resp.ok)throw new Error(out.error||'Video failed');const v=out.video||{};state.sceneMedia[i]={...(state.sceneMedia[i]||{}),loading:false,videoId:v.id,videoStatus:v.status||'queued'};toast('ส่งงานสร้างวิดีโอแล้ว')}catch(e){state.sceneMedia[i]={...(state.sceneMedia[i]||{}),loading:false};toast(`สร้างวิดีโอไม่สำเร็จ: ${e.message}`)}render()}
-async function checkVideo(i){const m=state.sceneMedia[i];if(!m?.videoId)return;state.sceneMedia[i].loading=true;render();try{const resp=await fetch(`/api/video/status/${encodeURIComponent(m.videoId)}`);const out=await resp.json();if(!resp.ok)throw new Error(out.error||'Status failed');state.sceneMedia[i]={...state.sceneMedia[i],loading:false,videoStatus:out.video.status||'processing'};toast(`สถานะ: ${out.video.status||'processing'}`)}catch(e){state.sceneMedia[i].loading=false;toast(e.message)}render()}
+async function checkVideo(i){
+  const m=state.sceneMedia[i];
+  if(!m?.videoId)return;
+
+  state.sceneMedia[i].loading=true;
+  render();
+
+  try{
+    const resp=await fetch(
+      `/api/video/status/${encodeURIComponent(m.videoId)}`
+    );
+
+    const out=await resp.json();
+
+    if(!resp.ok){
+      throw new Error(out.error||'Status failed');
+    }
+
+    const video=out.video||{};
+
+    state.sceneMedia[i]={
+      ...state.sceneMedia[i],
+      loading:false,
+      videoStatus:video.status||'processing',
+      videoUrl:video.url||state.sceneMedia[i].videoUrl||null
+    };
+
+    if(video.status==='completed'){
+      toast('สร้างวิดีโอสำเร็จแล้ว');
+    }else if(video.status==='failed'||video.status==='expired'){
+      toast(`สร้างวิดีโอไม่สำเร็จ: ${video.error||video.status}`);
+    }else{
+      toast(`สถานะ: ${video.status||'processing'}`);
+    }
+
+  }catch(e){
+    state.sceneMedia[i].loading=false;
+    toast(`ตรวจสอบวิดีโอไม่สำเร็จ: ${e.message}`);
+  }
+
+  render();
+}
 
 
 async function uploadBgm(file){

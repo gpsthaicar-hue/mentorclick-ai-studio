@@ -11,7 +11,7 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const OPENAI_TEXT_MODEL = process.env.OPENAI_TEXT_MODEL || 'gpt-5.6-luna';
 const OPENAI_IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || 'gpt-image-2';
 const OPENAI_TTS_MODEL = process.env.OPENAI_TTS_MODEL || 'gpt-4o-mini-tts';
-const OPENAI_VIDEO_MODEL = process.env.OPENAI_VIDEO_MODEL || 'sora-2';
+const XAI_VIDEO_MODEL = process.env.XAI_VIDEO_MODEL || 'grok-imagine-video-1.5';
 const publicDir = path.join(__dirname, 'public');
 const renderJobs = new Map();
 const musicAssets = new Map();
@@ -328,6 +328,52 @@ async function handleApi(req, res, url) {
   }
 
   if (url.pathname === '/api/video/start' && req.method === 'POST') {
+  if (!process.env.XAI_API_KEY) {
+    return send(res, 500, { error: 'XAI_API_KEY is not configured' });
+  }
+
+  try {
+    const body = JSON.parse(await readBody(req));
+
+    const payload = {
+      model: XAI_VIDEO_MODEL,
+      prompt: body.prompt || '',
+      duration: Number(body.seconds || 8),
+      aspect_ratio: body.ratio || '9:16',
+      resolution: '720p'
+    };
+
+    const response = await fetch('https://api.x.ai/v1/videos/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.XAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('XAI VIDEO START ERROR:', data);
+      return send(res, response.status, {
+        error: data?.error?.message || data?.error || 'xAI video generation failed'
+      });
+    }
+
+    return send(res, 200, {
+      ok: true,
+      video: {
+        id: data.request_id,
+        status: 'pending'
+      }
+    });
+
+  } catch (error) {
+    console.error('VIDEO START ERROR:', error);
+    return send(res, 500, { error: error.message });
+  }
+}
     if (!requireKey(res)) return;
     try {
       const body = JSON.parse(await readBody(req));
@@ -346,6 +392,58 @@ async function handleApi(req, res, url) {
   
 
   if (url.pathname.startsWith('/api/video/status/') && req.method === 'GET') {
+  if (!process.env.XAI_API_KEY) {
+    return send(res, 500, { error: 'XAI_API_KEY is not configured' });
+  }
+
+  try {
+    const id = decodeURIComponent(url.pathname.split('/').pop());
+
+    const response = await fetch(
+      `https://api.x.ai/v1/videos/${encodeURIComponent(id)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${process.env.XAI_API_KEY}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('XAI VIDEO STATUS ERROR:', data);
+      return send(res, response.status, {
+        error: data?.error?.message || data?.error || 'xAI video status failed'
+      });
+    }
+
+    let status = data.status || 'pending';
+
+    // แปลงสถานะให้ frontend เดิมใช้ต่อได้
+    if (status === 'done') {
+      status = 'completed';
+    }
+
+    return send(res, 200, {
+      ok: true,
+      video: {
+        id,
+        status,
+        url: data?.video?.url || null,
+        duration: data?.video?.duration || null,
+        error:
+          data.status === 'failed' || data.status === 'expired'
+            ? (data?.error?.message || data?.error || data.status)
+            : null
+      }
+    });
+
+  } catch (error) {
+    console.error('VIDEO STATUS ERROR:', error);
+    return send(res, 500, { error: error.message });
+  }
+}
     if (!requireKey(res)) return;
     try {
       const id = encodeURIComponent(url.pathname.split('/').pop());

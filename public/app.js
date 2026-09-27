@@ -85,6 +85,27 @@ function sceneHtml(s,i){
 }
 
 function modalView(){
+if(state.modal==='new')return `<div class="modal"><div class="modal-card">
+<h3>✨ สร้างงานใหม่</h3>
+<p class="muted">เลือก Studio และใส่หัวข้อที่ต้องการให้ AI ช่วยสร้าง</p>
+
+<div class="field">
+<label>หัวข้องาน</label>
+<input id="newTopic" placeholder="เช่น คลิปขายประกันรถยนต์, คอนเทนต์ Facebook">
+</div>
+
+<div class="field">
+<label>เลือก Studio</label>
+<select id="newStudio">
+${studios.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}
+</select>
+</div>
+
+<div class="toolbar" style="margin-top:14px">
+<button class="primary" data-action="start-new">เริ่มสร้างงาน →</button>
+<button class="ghost" data-action="close-modal">ยกเลิก</button>
+</div>
+</div></div>`;
   if(state.modal==='char')return `<div class="modal"><div class="modal-card"><h3>เพิ่มตัวละคร</h3><div class="field"><label>ชื่อตัวละคร</label><input id="charName" placeholder="เช่น โค้ชบอย"></div><div class="field"><label>รายละเอียด Character Lock</label><textarea id="charDetail" placeholder="เพศ อายุโดยประมาณ เสื้อผ้า ทรงผม บุคลิก รูปร่าง"></textarea></div><div class="toolbar"><button class="primary" data-action="save-char">เพิ่มตัวละคร</button><button class="ghost" data-action="close-modal">ยกเลิก</button></div></div></div>`;
   if(state.modal==='voice')return `<div class="modal"><div class="modal-card"><h3>เลือกเสียงพากย์</h3><div class="field"><label>Voice preset</label><select id="voicePreset">${voicePresets.map((v,i)=>`<option value="${i}">${v[1]}</option>`).join('')}</select></div><div class="field"><label>คำสั่งสไตล์เสียง</label><textarea id="voiceInstructions">${voicePresets[0][2]}</textarea></div><div class="toolbar"><button class="primary" data-action="voice-confirm">สร้างเสียง</button><button class="ghost" data-action="close-modal">ยกเลิก</button></div></div></div>`;
   if(state.modal==='render')return `<div class="modal"><div class="modal-card"><h3>Export MP4 ไฟล์เดียว</h3><p class="muted">ระบบจะรวมวิดีโอทุกฉาก + สร้างเสียงพากย์ใหม่จากบทพูด + ใส่คำขึ้นจอ + ผสมเพลง Background</p><div class="field"><label>เสียงพากย์</label><select id="renderVoice">${voicePresets.map((v,i)=>`<option value="${i}">${v[1]}</option>`).join('')}</select></div><div class="field"><label>สไตล์เสียง</label><textarea id="renderVoiceInstructions">${voicePresets[0][2]}</textarea></div><div class="field"><label>เพลง Background (ไม่ใส่ก็ได้)</label><input id="bgmFile" type="file" accept="audio/*"></div><div class="status">ทุกฉากต้องมีวิดีโอสถานะ completed ก่อน Export</div><div class="toolbar" style="margin-top:14px"><button class="primary" data-action="render-start">เริ่ม Export MP4</button><button class="ghost" data-action="close-modal">ยกเลิก</button></div></div></div>`;
@@ -155,7 +176,8 @@ function bind(){
   const search=el('search');if(search)search.oninput=e=>{state.search=e.target.value};
   document.querySelectorAll('[data-action]').forEach(b=>b.onclick=async()=>{
     const a=b.dataset.action;
-    if(a==='new'){state.view='explore';state.result=null;state.form.topic='';state.search='';state.category='ทั้งหมด';render();setTimeout(()=>{const s=document.getElementById('search');if(s){s.focus();s.select();}},50);return;}
+    if(a==='new'){state.modal='new';render();return;}
+    if(a==='start-new'){const topic=el('newTopic')?.value.trim();const studio=el('newStudio')?.value;if(!topic){toast('กรุณาใส่หัวข้องาน');return;}state.form.topic=topic;state.studio=studio;state.result=null;state.sceneMedia={};state.modal=null;state.view='studio';render();checkHealth();return;}
     if(a==='search'){if(search)state.search=search.value;render()}
     if(a==='generate')generate();
     if(a==='save')saveProject();

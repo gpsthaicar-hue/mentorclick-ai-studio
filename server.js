@@ -339,7 +339,9 @@ async function handleApi(req, res, url) {
       const payload = await openaiJson('/v1/videos', { method: 'POST', body: form });
       return send(res, 200, { ok: true, video: payload });
     } catch (error) {
-      return send(res, 500, { error: error.message });
+  console.error('VIDEO START ERROR:', error);
+  return send(res, 500, { error: error.message });
+}
     }
   }
 

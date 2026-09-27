@@ -444,15 +444,7 @@ async function handleApi(req, res, url) {
     return send(res, 500, { error: error.message });
   }
 }
-    if (!requireKey(res)) return;
-    try {
-      const id = encodeURIComponent(url.pathname.split('/').pop());
-      const payload = await openaiJson(`/v1/videos/${id}`, { method: 'GET' });
-      return send(res, 200, { ok: true, video: payload });
-    } catch (error) {
-      return send(res, 500, { error: error.message });
-    }
-  }
+          
 
   if (url.pathname.startsWith('/api/video/content/') && req.method === 'GET') {
     if (!requireKey(res)) return;

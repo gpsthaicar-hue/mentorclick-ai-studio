@@ -388,7 +388,7 @@ async function handleApi(req, res, url) {
   console.error('VIDEO START ERROR:', error);
   return send(res, 500, { error: error.message });
 }
-    }
+    
   
 
   if (url.pathname.startsWith('/api/video/status/') && req.method === 'GET') {

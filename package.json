@@ -1,0 +1,13 @@
+{
+  "name": "mentorclick-ai-creation-studio",
+  "version": "1.1.0",
+  "private": true,
+  "description": "AI Creation Studio with OpenAI media generation and FFmpeg final MP4 renderer",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

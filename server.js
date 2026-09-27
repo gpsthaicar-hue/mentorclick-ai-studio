@@ -343,7 +343,7 @@ async function handleApi(req, res, url) {
   return send(res, 500, { error: error.message });
 }
     }
-  }
+  
 
   if (url.pathname.startsWith('/api/video/status/') && req.method === 'GET') {
     if (!requireKey(res)) return;

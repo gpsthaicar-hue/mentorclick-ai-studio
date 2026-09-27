@@ -373,7 +373,7 @@ async function handleApi(req, res, url) {
     console.error('VIDEO START ERROR:', error);
     return send(res, 500, { error: error.message });
   }
-}
+
     if (!requireKey(res)) return;
     try {
       const body = JSON.parse(await readBody(req));

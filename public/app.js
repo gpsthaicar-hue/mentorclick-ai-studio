@@ -155,7 +155,7 @@ function bind(){
   const search=el('search');if(search)search.oninput=e=>{state.search=e.target.value};
   document.querySelectorAll('[data-action]').forEach(b=>b.onclick=async()=>{
     const a=b.dataset.action;
-    if(a==='new'){state.view='explore';state.result=null;state.form.topic='';render()}
+    if(a==='new'){state.view='explore';state.result=null;state.form.topic='';state.search='';state.category='ทั้งหมด';render();setTimeout(()=>{const s=document.getElementById('search');if(s){s.focus();s.select();}},50);return;}
     if(a==='search'){if(search)state.search=search.value;render()}
     if(a==='generate')generate();
     if(a==='save')saveProject();
